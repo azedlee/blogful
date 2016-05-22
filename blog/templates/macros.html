@@ -1,0 +1,29 @@
+<!--Might be number of places where you might want to render an entry; therefore, separate the code with Jinja macros-->
+
+<!--Macro called "render_entry" taking entry as a single argument-->
+{% macro render_entry(entry) %}
+<div class="row">
+    <div class="col-md-2 text-right metadata">
+        <ul class="list-unstyled">
+            <li>
+                {{ entry.datetime | dateformat("%d/%m/%y") }}
+            </li>
+        </ul>
+    </div>
+    <div class="col-md-10">
+        <h1>
+            {{ entry.title }}
+        </h1>
+        {{ entry.content | markdown }}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro render_single_entry(entry) %}
+<div class="col-md-10">
+    <h1>
+        <a href="{{url_for('view_entry', eid=entry.id)}}">{{ entry.title }}</a>
+    </h1>
+    {{ entry.content | markdown }}
+</div>
+{% endmacro %}

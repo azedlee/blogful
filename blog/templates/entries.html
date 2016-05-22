@@ -1,0 +1,27 @@
+{% import "macros.html" as macros %}
+<!--Template should inherit from base.html-->
+{% extends "base.html" %}
+{% block content %}
+
+<!--Loop through the entries, rendering each one using the render_entry macro-->
+{% for entry in entries %}
+{{ macros.render_entry(entry) }}
+{% endfor %}
+
+<ul class="pager">
+    {% if has_next %}
+    <li class="previous">
+        <a href="{{ url_for('entries', page=page+1) }}">&larr; Older</a>
+    </li>
+    {% endif %}
+    {% if has_prev %}
+    <li class="next">
+        <a href="{{ url_for('entries', page=page-1) }}">&rarr; Newer</a>
+    </li>
+    {% endif %}
+</ul>
+
+{% endblock %}
+
+<!--block tag is where the child templates fill in. Think of these as placeholders
+to be filled in by code from the child template(s)-->

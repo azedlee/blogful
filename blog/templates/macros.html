@@ -15,6 +15,7 @@
             {{ entry.title }}
         </h1>
         {{ entry.content | markdown }}
+        {{ entry.author.name }}
     </div>
 </div>
 {% endmacro %}
@@ -25,5 +26,6 @@
         <a href="{{url_for('view_entry', eid=entry.id)}}">{{ entry.title }}</a>
     </h1>
     {{ entry.content | markdown }}
+    {{ entry.author.name }}
 </div>
 {% endmacro %}

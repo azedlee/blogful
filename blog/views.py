@@ -1,7 +1,9 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, flash
+from flask.ext.login import login_user, login_required, current_user
+from werkzeug.security import check_password_hash
 
 from . import app
-from .database import session, Entry
+from .database import session, Entry, User
 
 # How many entries per page (FYI, ALL_UPPERCASE_NAME is constant, by convention)
 PAGINATE_BY = 10
@@ -44,16 +46,19 @@ def entries(page=1):
 
 # The methods=["GET"] parameter specifies that the route will only be used for GET requests to the page
 @app.route("/entry/add", methods=["GET"])
+@login_required
 def add_entry_get():
     return render_template("add_entry.html")
 
 # The methods=["POST"] parameter specifies that the route will only accept POST requests.
 @app.route("/entry/add", methods=["POST"])
+@login_required
 def add_entry_post():
     # The request.form dictionary to access the data submitted with your form and assign it to the correct fields in the entry
     entry = Entry(
         title=request.form["title"],
-        content=request.form["content"]
+        content=request.form["content"],
+        author=current_user
         )
     session.add(entry)
     session.commit()
@@ -88,3 +93,28 @@ def delete_entry(eid):
     entry = session.query(Entry).filter_by(id=eid).delete()
     session.commit()
     return redirect(url_for("entries"))
+
+@app.route("/login", methods=["GET"])
+def login_get():
+    return render_template("login.html")
+    
+@app.route("/login", methods=["POST"])
+def login_post():
+    email = request.form["email"]
+    password = request.form["password"]
+    user = session.query(User).filter_by(email=email).first()
+    # Check if that user exists and use Werkzeug's check_password_hash function to compare
+    # the password the user entered with the hash stored in the database
+    if not user or not check_password_hash(user.password, password):
+        # flash function stores a message which you can use when you render the next page
+        flash("Incorrect username or password", "danger")
+        return redirect(url_for("login_get"))
+    
+    # login_user function allows cookies (a small chunk of data) to the user's browser which is used to identify the user
+    # when the user tries to access a protected resource, Flask-Login will make sure that they have the cookie set and allowed to access
+    login_user(user)
+    # After user logged in, redirect the user
+    # Normally, redirect to user to the entries page
+    # If there is a 'next' parameter, then redirect to that address
+    # Flask uses this so that the user can access the intended resource after logging in
+    return redirect(request.args.get('next') or url_for("entries"))

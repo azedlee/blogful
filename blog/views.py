@@ -1,6 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash
-from flask.ext.login import login_user, login_required, current_user
+from flask.ext.login import login_user, login_required, current_user, logout_user
 from werkzeug.security import check_password_hash
+from werkzeug.exceptions import Forbidden
 
 from . import app
 from .database import session, Entry, User
@@ -14,17 +15,23 @@ def entries(page=1):
     # Zero-indexed page
     page_index = page - 1
     
+    args = request.args
+    if "limit" in args:
+        limit = int(args["limit"])
+    else:
+        limit = PAGINATE_BY
+    
     # Use count method of a query object to find out how many entries there are in total
     count = session.query(Entry).count()
     
     # Index of the first entry you should see
-    start = page_index * PAGINATE_BY
+    start = page_index * limit
     
     # Index of the last entry you should see
-    end = start + PAGINATE_BY
+    end = start + limit
     
     # Total number of pages of content
-    total_pages = (count - 1) // PAGINATE_BY + 1
+    total_pages = (count - 1) // limit + 1
     
     # IF there is a page after the current one
     has_next = page_index < total_pages - 1
@@ -41,7 +48,8 @@ def entries(page=1):
                             has_next=has_next,
                             has_prev=has_prev,
                             page=page,
-                            total_pages=total_pages
+                            total_pages=total_pages,
+                            limit=limit # parameter for the html
                             )
 
 # The methods=["GET"] parameter specifies that the route will only be used for GET requests to the page
@@ -73,6 +81,10 @@ def view_entry(eid):
 @app.route("/entry/<int:eid>/edit", methods=["GET"])
 def edit_entry_get(eid):
     entry = session.query(Entry).filter_by(id=eid).first()
+    
+    if not all([entry.author, current_user]) or entry.author.id != current_user.id:
+        raise Forbidden("Only Author can edit this post")
+    
     title = entry.title
     content = entry.content
     return render_template("edit_entry.html",
@@ -83,6 +95,10 @@ def edit_entry_get(eid):
 @app.route("/entry/<int:eid>/edit", methods=["POST"])
 def edit_entry_post(eid):
     entry = session.query(Entry).filter_by(id=eid).first()
+    
+    if not all([entry.author, current_user]) or entry.author.id != current_user.id:
+        raise Forbidden("Only Author can edit this post")
+    
     entry.title=request.form["title"],
     entry.content=request.form["content"]
     session.commit()
@@ -91,6 +107,10 @@ def edit_entry_post(eid):
 @app.route("/entry/<int:eid>/delete", methods=["GET"])
 def delete_entry(eid):
     entry = session.query(Entry).filter_by(id=eid).delete()
+    
+    if not all([entry.author, current_user]) or entry.author.id != current_user.id:
+        raise Forbidden("Only Author can delete this post")
+    
     session.commit()
     return redirect(url_for("entries"))
 
@@ -118,3 +138,10 @@ def login_post():
     # If there is a 'next' parameter, then redirect to that address
     # Flask uses this so that the user can access the intended resource after logging in
     return redirect(request.args.get('next') or url_for("entries"))
+
+@app.route("/logout")
+@login_required
+def log_out():
+    logout_user()
+    flash("You have logged out.")
+    return redirect(url_for("login_get"))

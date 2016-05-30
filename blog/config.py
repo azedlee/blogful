@@ -11,3 +11,8 @@ class DevelopmentConfig(object):
 ### If connection refused, execute "sudo service postgresql start"
 ### In the terminal prompt, enter the following:
 ###     export BLOGFUL_SECRET_KEY="your_secret_key_here"
+
+class TestingConfig(object):
+    SQLALCHEMY_DATABASE_URI = "postgresql://ubuntu:thinkful@localhost:5432/blogful-test"
+    DEBUG = False
+    SECRET_KEY = "Not secret"

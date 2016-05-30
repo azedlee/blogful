@@ -38,4 +38,5 @@ class User(Base, UserMixin):
     entries = relationship("Entry", backref="author")
 
 # Construct the table in the database
+
 Base.metadata.create_all(engine)

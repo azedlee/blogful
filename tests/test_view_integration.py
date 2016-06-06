@@ -66,13 +66,18 @@ class TestEditEntry(unittest.TestCase):
     }
     
     def setUp(self):
-        self.client = User(name="Alice", email="alice@example.com",
+        self.client = app.test_client()
+        
+        self.alice = User(name="Alice", email="alice@example.com",
                      password=generate_password_hash("test"))
-        peter = User(name="Peter", email="peter@example.com",
+        self.peter = User(name="Peter", email="peter@example.com",
                      password=generate_password_hash("test"))
-        test_entry = Entry(title="Test Title", content="Test Content", author=self.client)
-        session.add(self.client)
-        session.add(peter)
+        test_entry = Entry(title="Test Title", content="Test Content", author=self.alice)
+        
+        Base.metadata.create_all(engine)
+        
+        session.add(self.alice)
+        session.add(self.peter)
         session.add(test_entry)
         try:
             session.commit()
@@ -83,11 +88,11 @@ class TestEditEntry(unittest.TestCase):
     def simulate_login(self):
         # Method to get access to a variable representing the HTTP session
         with self.client.session_transaction() as http_session:
-            http_session["user_id"] = str(self.client.id)
+            http_session["user_id"] = str(self.alice.id)
             # _fresh means active
             http_session["_fresh"] = True
     
-    def test_wrong_author_edit(self, test_users):
+    def test_wrong_author_edit(self):
         self.simulate_login()
         
         response = self.client.post("entry/0/edit", data=self.entry_data)
@@ -95,7 +100,7 @@ class TestEditEntry(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         
         entry = entries[0]
-        self.assertNotEqual(entry.author, test_users.peter)
+        self.assertNotEqual(entry.author, self.peter)
     
     def test_right_author_edit(self):
         self.simulate_login()
@@ -105,7 +110,7 @@ class TestEditEntry(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         
         entry = entries[0]
-        self.assertEqual(entry.author, self.client)
+        self.assertEqual(entry.author, self.alice)
     
     def tearDown(self):
         session.close()
@@ -119,13 +124,18 @@ class TestDeleteEntry(unittest.TestCase):
     }
     
     def setUp(self):
-        self.client = User(name="Alice1", email="alice1@example.com",
+        self.client = app.test_client()
+        
+        self.alice = User(name="Alice1", email="alice1@example.com",
                      password=generate_password_hash("test"))
-        peter = User(name="Peter1", email="peter1@example.com",
+        self.peter = User(name="Peter1", email="peter1@example.com",
                      password=generate_password_hash("test1"))
-        test_entry = Entry(title="Test Title 2", content="Test Content 2", author=self.client)
-        session.add(self.client)
-        session.add(peter)
+        test_entry = Entry(title="Test Title 2", content="Test Content 2", author=self.alice)
+        
+        Base.metadata.create_all(engine)
+        
+        session.add(self.alice)
+        session.add(self.peter)
         session.add(test_entry)
         try:
             session.commit()
@@ -136,11 +146,11 @@ class TestDeleteEntry(unittest.TestCase):
     def simulate_login(self):
         # Method to get access to a variable representing the HTTP session
         with self.client.session_transaction() as http_session:
-            http_session["user_id"] = str(self.client.id)
+            http_session["user_id"] = str(self.alice.id)
             # _fresh means active
             http_session["_fresh"] = True
     
-    def test_wrong_author_edit(self, test_users):
+    def test_wrong_author_edit(self):
         self.simulate_login()
         
         response = self.client.post("entry/0/delete", data=self.entry_data)
@@ -148,7 +158,7 @@ class TestDeleteEntry(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         
         entry = entries[0]
-        self.assertNotEqual(entry.author, test_users.peter)
+        self.assertNotEqual(entry.author, self.peter)
     
     def test_right_author_edit(self):
         self.simulate_login()
@@ -158,7 +168,7 @@ class TestDeleteEntry(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         
         entry = entries[0]
-        self.assertEqual(entry.author, self.client)
+        self.assertEqual(entry.author, self.alice)
     
     def tearDown(self):
         session.close()

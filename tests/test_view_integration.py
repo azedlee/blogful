@@ -65,12 +65,13 @@ class TestEditEntry(unittest.TestCase):
                      password=generate_password_hash("test"))
         peter = User(name="Peter", email="peter@example.com",
                      password=generate_password_hash("test"))
-        test_entry = Entry(title="Test Title", content="Test Content", author="Alice")
-        session.add(alice, peter, test_entry)
+        test_users = [alice, peter]
+        test_entry = Entry(title="Test Title", content="Test Content", author=alice)
+        session.add_all([test_users, test_entry])
         session.commit()
     
     def test_wrong_author_edit(self):
-        self.simulate_login(peter)
+        self.simulate_login()
         
         response = self.client.post("entry/0/edit", data=self.test_entry)
         entries = session.query(Entry).all()
@@ -100,8 +101,9 @@ class TestDeleteEntry(unittest.TestCase):
                      password=generate_password_hash("test"))
         peter = User(name="Peter", email="peter@example.com",
                      password=generate_password_hash("test"))
-        test_entry = Entry(title="Test Title", content="Test Content", author="Alice")
-        session.add(alice, peter, test_entry)
+        test_users = [alice, peter]
+        test_entry = Entry(title="Test Title", content="Test Content", author=alice)
+        session.add_all([test_users, test_entry])
         session.commit()
     
     def test_wrong_author_edit(self):
